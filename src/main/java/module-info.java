@@ -1,10 +1,10 @@
-module com.example.movidle {
+module Movidle
+{
+    requires javafx.graphics;
     requires javafx.controls;
+    requires java.base;
     requires javafx.fxml;
 
-    requires org.controlsfx.controls;
-    requires com.dlsc.formsfx;
-
-    opens com.example.movidle to javafx.fxml;
-    exports com.example.movidle;
+    opens mov.movie;
+    exports mov.movie;
 }
