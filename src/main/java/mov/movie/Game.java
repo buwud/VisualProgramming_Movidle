@@ -8,12 +8,12 @@ import java.util.Random;
 public class Game {
     final private List<Movie> movies;
     private Movie currentMovie;
-    final private List<Boolean> guessResults;
+
+    public List<Boolean> guessings;
 
     public Game() throws IOException
     {
         movies = getFromCSV();
-        guessResults = new ArrayList<>();
         chooseRandomMovie();
     }
 
@@ -55,20 +55,8 @@ public class Game {
         currentMovie = movies.get(index);
     }
 
-    public void makeGuess(String guess) {
-        boolean isCorrect = guess.equalsIgnoreCase(currentMovie.getTitle());
-        guessResults.add(isCorrect);
-    }
-
-    public List<Boolean> getGuessResults() {
-        return guessResults;
-    }
-
     public Movie getCurrentMovie() {
         return currentMovie;
     }
 
-    public boolean isGameOver() {
-        return guessResults.size() >= 5;
-    }
 }
