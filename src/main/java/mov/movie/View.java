@@ -11,7 +11,7 @@ import javafx.stage.Stage;
 
 public class View extends Application {
     private Game game;
-    private Label titleLabel;
+    private Label titleLabel, g;
     private TextField guessTextField;
     private Button guessButton;
     private GridPane tileGrid;
@@ -24,6 +24,8 @@ public class View extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         game = new Game();
+
+        g=new Label(game.getCurrentMovie().getTitle());
 
         titleLabel = new Label("Guess the movie:");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
@@ -43,7 +45,8 @@ public class View extends Application {
 
         VBox mainBox = new VBox(20);
         mainBox.setPadding(new Insets(20));
-        mainBox.getChildren().addAll(titleLabel, guessTextField, guessButton, tileGrid);
+        mainBox.getChildren().addAll(g,titleLabel, guessTextField, guessButton
+                , tileGrid);
         mainBox.setAlignment(Pos.CENTER);
         mainBox.setStyle("-fx-background-color: #f4f4f4;");
 
@@ -55,30 +58,39 @@ public class View extends Application {
         displayMovieTiles();
     }
 
-    private void makeGuess() {
+    private void makeGuess()
+    {
         String guess = guessTextField.getText();
-        if (guess.equalsIgnoreCase(game.getCurrentMovie().getTitle())) {
+        Movie movieInput= game.getByTitle(guess,game.movies);
+        Movie movie = game.getCurrentMovie();
+
+        boolean titleCorrect = movieInput.getTitle().equalsIgnoreCase(movie.getTitle());
+        boolean yearCorrect = String.valueOf(movieInput.getYear()).equalsIgnoreCase(String.valueOf(movie.getYear()));
+        boolean genreCorrect = movieInput.getGenre().equalsIgnoreCase(movie.getGenre());
+        boolean originCorrect = movieInput.getOrigin().equalsIgnoreCase(movie.getOrigin());
+        boolean directorCorrect = movieInput.getDirector().equalsIgnoreCase(movie.getDirector());
+        boolean starCorrect = movieInput.getStar().equalsIgnoreCase(movie.getStar());
+
+        if(titleCorrect)
             showWinPopup();
-        } else {
-            generateFeedbackTiles();
+        else
+        {
             guesses++;
 
-            if (guesses == 5) {
+            if(guesses==5)
                 showLosePopup();
-            }
+            else
+                generateFeedbackTiles(guess,yearCorrect,genreCorrect,
+                                      originCorrect,directorCorrect,starCorrect);
         }
 
         guessTextField.clear();
         guessTextField.requestFocus();
     }
 
-
-    private void displayMovieTiles() {
-        Movie movie = game.getCurrentMovie();
-
-        for (int i = 0; i < guesses; i++) {
-            addTile("Guess #" + (i + 1), "Incorrect");
-        }
+    private void displayMovieTiles()
+    {
+        Movie movie =  game.getCurrentMovie();
 
         addTile("Year", movie.getYear() + "");
         addTile("Genre", movie.getGenre());
@@ -87,15 +99,15 @@ public class View extends Application {
         addTile("Star", movie.getStar());
     }
 
-
-    private void addTile(String label, String value) {
+    private void addTile(String label, String value)
+    {
         Label titleLabel = new Label(label);
         titleLabel.setStyle("-fx-font-weight: bold;");
 
         Label valueLabel = new Label(value);
         valueLabel.setStyle("-fx-font-weight: bold;");
 
-        VBox tileBox = new VBox(5);
+        HBox tileBox = new HBox(5);
         tileBox.setPadding(new Insets(5));
         tileBox.setAlignment(Pos.CENTER);
         tileBox.getChildren().addAll(titleLabel, valueLabel);
@@ -104,18 +116,28 @@ public class View extends Application {
         tileGrid.addRow(tileGrid.getRowCount(), tileBox);
     }
 
-    private void generateFeedbackTiles() {
-        Movie movie = game.getCurrentMovie();
-        tileGrid.getChildren().clear();
+    private void generateFeedbackTiles(String guess, Boolean yearCorrect,
+                                       Boolean genreCorrect,
+                                       Boolean originCorrect,
+                                       Boolean directorCorrect, boolean starCorrect)
+    {
+        Movie movie= game.getByTitle(guess,game.movies);
+        //boollara göre renkleri göstercek
 
-        addTileWithColor("Year", movie.getYear() + "", Color.RED);
-        addTileWithColor("Genre", movie.getGenre(), Color.GREEN);
-        addTileWithColor("Origin", movie.getOrigin(), Color.RED);
-        addTileWithColor("Director", movie.getDirector(), Color.GREEN);
-        addTileWithColor("Star", movie.getStar(), Color.RED);
+        addTileWithColor("Year", movie.getYear() + "",
+                          yearCorrect ? Color.GREEN : Color.RED);
+        addTileWithColor("Genre", movie.getGenre(), genreCorrect ? Color.GREEN :
+                Color.RED);
+        addTileWithColor("Origin", movie.getOrigin(), originCorrect ?
+                Color.GREEN : Color.RED);
+        addTileWithColor("Director", movie.getDirector(), directorCorrect ?
+                Color.GREEN : Color.RED);
+        addTileWithColor("Star", movie.getStar(), starCorrect ? Color.GREEN :
+                Color.RED);
     }
 
-    private void addTileWithColor(String label, String value, Color color) {
+    private void addTileWithColor(String label, String value, Color color)
+    {
         Label titleLabel = new Label(label);
         titleLabel.setStyle("-fx-font-weight: bold;");
 

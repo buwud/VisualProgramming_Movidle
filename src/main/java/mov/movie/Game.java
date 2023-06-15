@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Random;
 
 public class Game {
-    final private List<Movie> movies;
+    final public List<Movie> movies;
     private Movie currentMovie;
 
     public List<Boolean> guessings;
@@ -58,5 +58,16 @@ public class Game {
     public Movie getCurrentMovie() {
         return currentMovie;
     }
+
+    public Movie getByTitle(String title, List<Movie> movies)
+    {
+        for (Movie movie : movies) {
+            if (movie.getTitle().equalsIgnoreCase(title)) {
+                return movie;
+            }
+        }
+        return null; // Return null if no movie with the specified title is found
+    }
+
 
 }
