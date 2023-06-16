@@ -25,7 +25,7 @@ public class View extends Application {
     public void start(Stage primaryStage) throws Exception {
         game = new Game();
 
-        g=new Label(game.getCurrentMovie().getTitle());
+        g = new Label(game.getCurrentMovie().getTitle());
 
         titleLabel = new Label("Guess the movie:");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
@@ -45,8 +45,7 @@ public class View extends Application {
 
         VBox mainBox = new VBox(20);
         mainBox.setPadding(new Insets(20));
-        mainBox.getChildren().addAll(g,titleLabel, guessTextField, guessButton
-                , tileGrid);
+        mainBox.getChildren().addAll(g, titleLabel, guessTextField, guessButton, tileGrid);
         mainBox.setAlignment(Pos.CENTER);
         mainBox.setStyle("-fx-background-color: #f4f4f4;");
 
@@ -57,6 +56,7 @@ public class View extends Application {
 
         displayMovieTiles();
     }
+
 
     private void makeGuess()
     {
@@ -90,17 +90,16 @@ public class View extends Application {
 
     private void displayMovieTiles()
     {
-        Movie movie =  game.getCurrentMovie();
+        Movie movie = game.getCurrentMovie();
 
-        addTile("Year", movie.getYear() + "");
-        addTile("Genre", movie.getGenre());
-        addTile("Origin", movie.getOrigin());
-        addTile("Director", movie.getDirector());
-        addTile("Star", movie.getStar());
+        addTile("Year", movie.getYear() + "", 0);
+        addTile("Genre", movie.getGenre(), 1);
+        addTile("Origin", movie.getOrigin(), 2);
+        addTile("Director", movie.getDirector(), 3);
+        addTile("Star", movie.getStar(), 4);
     }
 
-    private void addTile(String label, String value)
-    {
+    private void addTile(String label, String value, int columnIndex) {
         Label titleLabel = new Label(label);
         titleLabel.setStyle("-fx-font-weight: bold;");
 
@@ -113,31 +112,30 @@ public class View extends Application {
         tileBox.getChildren().addAll(titleLabel, valueLabel);
         tileBox.setStyle("-fx-background-color: #ffffff; -fx-border-color: #cccccc; -fx-border-width: 1px;");
 
-        tileGrid.addRow(tileGrid.getRowCount(), tileBox);
+        tileGrid.add(tileBox, columnIndex, 0); // Add tile to the specified column (0 row index)
     }
 
-    private void generateFeedbackTiles(String guess, Boolean yearCorrect,
-                                       Boolean genreCorrect,
-                                       Boolean originCorrect,
-                                       Boolean directorCorrect, boolean starCorrect)
-    {
-        Movie movie= game.getByTitle(guess,game.movies);
-        //boollara göre renkleri göstercek
+
+    private void generateFeedbackTiles(String guess, boolean yearCorrect,
+                                       boolean genreCorrect, boolean originCorrect,
+                                       boolean directorCorrect, boolean starCorrect) {
+        Movie movie = game.getByTitle(guess, game.movies);
+
+        int rowIndex = tileGrid.getRowCount(); // Get the current row count
 
         addTileWithColor("Year", movie.getYear() + "",
-                          yearCorrect ? Color.GREEN : Color.RED);
-        addTileWithColor("Genre", movie.getGenre(), genreCorrect ? Color.GREEN :
-                Color.RED);
-        addTileWithColor("Origin", movie.getOrigin(), originCorrect ?
-                Color.GREEN : Color.RED);
-        addTileWithColor("Director", movie.getDirector(), directorCorrect ?
-                Color.GREEN : Color.RED);
-        addTileWithColor("Star", movie.getStar(), starCorrect ? Color.GREEN :
-                Color.RED);
+                         yearCorrect ? Color.GREEN : Color.RED, 0, rowIndex);
+        addTileWithColor("Genre", movie.getGenre(),
+                         genreCorrect ? Color.GREEN : Color.RED, 1, rowIndex);
+        addTileWithColor("Origin", movie.getOrigin(),
+                         originCorrect ? Color.GREEN : Color.RED, 2, rowIndex);
+        addTileWithColor("Director", movie.getDirector(),
+                         directorCorrect ? Color.GREEN : Color.RED, 3, rowIndex);
+        addTileWithColor("Star", movie.getStar(),
+                         starCorrect ? Color.GREEN : Color.RED, 4, rowIndex);
     }
 
-    private void addTileWithColor(String label, String value, Color color)
-    {
+    private void addTileWithColor(String label, String value, Color color, int columnIndex, int rowIndex) {
         Label titleLabel = new Label(label);
         titleLabel.setStyle("-fx-font-weight: bold;");
 
@@ -150,8 +148,9 @@ public class View extends Application {
         tileBox.getChildren().addAll(titleLabel, valueLabel);
         tileBox.setStyle("-fx-background-color: " + toRgbCode(color) + "; -fx-border-color: #cccccc; -fx-border-width: 1px;");
 
-        tileGrid.addRow(tileGrid.getRowCount(), tileBox);
+        tileGrid.add(tileBox, columnIndex, rowIndex); // Add tile to the specified column and row
     }
+
 
 
     private String toRgbCode(Color color) {
