@@ -21,15 +21,13 @@ public class Game {
     {
         List<Movie> movies_= new ArrayList<>();
 
-        try(BufferedReader br= new BufferedReader(new FileReader("C:/Users/yeolb/Desktop/imdb_top_250.csv")))
-        {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("C:/Users/yeolb/Desktop/imdb_top_250.csv"), "ISO-8859-9"))) {
             String line;
             br.readLine();
-            while((line=br.readLine() )!= null)
-            {
-                String[] items= line.split(";");
+            while ((line = br.readLine()) != null) {
+                String[] items = line.split(";");
                 int id = Integer.parseInt(items[0]);
-                String title  = items[1];
+                String title = items[1];
                 int year = Integer.parseInt(items[2]);
                 String genre = items[3];
                 String origin = items[4];
@@ -37,15 +35,13 @@ public class Game {
                 String star = items[6];
                 String url = items[7];
 
-                Movie movie = new Movie(id,year,title,genre,origin,director,
-                                        star,url);
+                Movie movie = new Movie(id, year, title, genre, origin, director, star, url);
                 movies_.add(movie);
             }
-        }
-        catch (IOException exception)
-        {
+        } catch (IOException exception) {
             exception.printStackTrace();
         }
+
         return movies_;
     }
 
