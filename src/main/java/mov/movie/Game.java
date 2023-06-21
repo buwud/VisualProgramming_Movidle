@@ -21,7 +21,8 @@ public class Game {
     {
         List<Movie> movies_= new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("C:/Users/yeolb/Desktop/imdb_top_250.csv"), "ISO-8859-9"))) {
+        try (BufferedReader br =
+                     new BufferedReader(new InputStreamReader(new FileInputStream("src/imdb_top_250.csv"), "ISO-8859-9"))) {
             String line;
             br.readLine();
             while ((line = br.readLine()) != null) {

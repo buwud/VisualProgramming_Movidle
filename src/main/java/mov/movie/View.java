@@ -129,7 +129,6 @@ public class View extends Application {
         primaryStage.setScene(scene);
         primaryStage.setTitle("Movidle Game");
         primaryStage.initStyle(StageStyle.TRANSPARENT);
-        primaryStage.setIconified(true);
         primaryStage.show();
     }
     private void makeGuess() {
