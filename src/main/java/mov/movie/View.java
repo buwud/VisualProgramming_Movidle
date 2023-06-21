@@ -1,6 +1,7 @@
 package mov.movie;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,8 +11,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import mov.movie.Game;
-import mov.movie.Movie;
+import java.util.ArrayList;
+import java.util.List;
 
 public class View extends Application {
     private Game game;
@@ -21,6 +22,8 @@ public class View extends Application {
     private Button exitButton;
     private GridPane tileGrid;
     private int guesses = 0;
+    private Label hint;
+    private ListView<String> suggestionListView;
 
     public static void main(String[] args) {
         launch(args);
@@ -33,12 +36,45 @@ public class View extends Application {
         g = new Label(game.getCurrentMovie().getTitle());
         g.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
 
+        hint = new Label("hint: " + (game.getCurrentMovie().getYear()));
+        hint.setTextFill(Color.GRAY);
+
+
         titleLabel = new Label("Guess the movie:");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
 
         guessTextField = new TextField();
-        guessTextField.setMaxWidth(400);
+        guessTextField.setMaxWidth(800);
+        guessTextField.setPrefWidth(600);
         guessTextField.setStyle("-fx-font-size: 14px; -fx-pref-height: 40px; -fx-background-color: #444444; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #999999;");
+        guessTextField.setOnKeyPressed(e -> {
+            int index = suggestionListView.getSelectionModel().getSelectedIndex();
+            switch (e.getCode()){
+                case UP:
+                    // int selected =
+                    suggestionListView.getSelectionModel().getSelectedIndex();
+                    if(index>0)
+                    {
+                        suggestionListView.getSelectionModel().select(index-1);
+                        suggestionListView.scrollTo(index-1);
+                    }
+                    break;
+                case DOWN:
+
+                    if (index < suggestionListView.getItems().size() - 1) {
+                        suggestionListView.getSelectionModel().select(index + 1);
+                        suggestionListView.scrollTo(index + 1);
+                    }
+                    break;
+                case ENTER:
+                    String selected = suggestionListView.getSelectionModel().getSelectedItem();
+                    if(selected != null){
+                        guessTextField.setText(selected);
+                        suggestionListView.setVisible(false);
+                        guessTextField.requestFocus();
+                    }
+            }
+        });
 
         guessButton = new Button("Guess");
         guessButton.setStyle("-fx-font-size: 14px; -fx-pref-height: 40px; " +
@@ -47,28 +83,55 @@ public class View extends Application {
         guessButton.setDefaultButton(true);
         guessButton.setOnAction(e -> makeGuess());
 
+        HBox guessBox= new HBox(guessTextField,guessButton);
+        guessBox.setSpacing(10);
+        guessBox.setAlignment(Pos.TOP_CENTER);
+
+        //AUTO-COMPLETE
+        suggestionListView = new ListView<>();
+        suggestionListView.setPrefHeight(50);
+        suggestionListView.setVisible(false);
+        suggestionListView.setOnMouseClicked(e -> {
+            String selectedSuggestion = suggestionListView.getSelectionModel().getSelectedItem();
+            if(selectedSuggestion != null)
+                guessTextField.setText(selectedSuggestion);
+            suggestionListView.setVisible(false);
+        });
+
+        guessTextField.setOnKeyReleased(e -> handleAutoComplete());
+
+        exitButton = new Button("Exit");
+        exitButton.setStyle("-fx-font-size: 12px; -fx-background-color:#DD7F77 ; " +
+                                    "-fx-text-fill: #222222;");
+        exitButton.setOnAction(e -> primaryStage.close());
+
+        VBox exitButtonContainer = new VBox(exitButton);
+        exitButtonContainer.setAlignment(Pos.TOP_RIGHT);
+        exitButtonContainer.setPadding(new Insets(10));
+
         tileGrid = new GridPane();
         tileGrid.setHgap(10);
         tileGrid.setVgap(10);
         tileGrid.setAlignment(Pos.CENTER);
 
-        VBox mainBox = new VBox(20);
-        mainBox.setPadding(new Insets(20));
-        mainBox.getChildren().addAll(g, titleLabel, guessTextField, guessButton, tileGrid);
-        mainBox.setAlignment(Pos.CENTER);
-        mainBox.setStyle("-fx-background-color: #222222; -fx-background-radius: 10px;");
 
-        Scene scene = new Scene(mainBox, 600, 500);
+        VBox mainContainer = new VBox(20);
+        mainContainer.setPadding(new Insets(20));
+        mainContainer.getChildren().addAll(exitButtonContainer,g, titleLabel,
+                                           guessBox, hint, suggestionListView,
+                                           tileGrid);
+        mainContainer.setAlignment(Pos.CENTER);
+        mainContainer.setStyle("-fx-background-color: #222222; " +
+                                 "-fx-background-radius: 10px;");
+
+        Scene scene = new Scene(mainContainer, 1000, 800);
         scene.setFill(Color.TRANSPARENT);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Movidle Game");
         primaryStage.initStyle(StageStyle.TRANSPARENT);
+        primaryStage.setIconified(true);
         primaryStage.show();
-
-        displayMovieTiles();
     }
-
-
     private void makeGuess() {
         String guess = guessTextField.getText();
         Movie movieInput = game.getByTitle(guess, game.movies);
@@ -81,11 +144,14 @@ public class View extends Application {
         boolean directorCorrect = movieInput.getDirector().equalsIgnoreCase(movie.getDirector());
         boolean starCorrect = movieInput.getStar().equalsIgnoreCase(movie.getStar());
 
-        if (titleCorrect)
+        if (titleCorrect){
+            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect,
+                                  originCorrect, directorCorrect, starCorrect);
             showWinPopup();
+        }
         else {
             guesses++;
-            generateFeedbackTiles(guess, yearCorrect, genreCorrect,
+            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect,
                                   originCorrect, directorCorrect, starCorrect);
             if (guesses == 5)
                 showLosePopup();
@@ -94,56 +160,33 @@ public class View extends Application {
         guessTextField.clear();
         guessTextField.requestFocus();
     }
-
-    private void displayMovieTiles() {
-        Movie movie = game.getCurrentMovie();
-
-        addTile(movie.getYear() + "", 0);
-        addTile(movie.getGenre(), 1);
-        addTile(movie.getOrigin(), 2);
-        addTile(movie.getDirector(), 3);
-        addTile(movie.getStar(), 4);
-    }
-
-    private void addTile(String value, int columnIndex) {
-        Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-
-        StackPane tilePane = new StackPane();
-        tilePane.setStyle("-fx-background-color: #ffffff; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-padding: 10px;");
-        tilePane.setEffect(new DropShadow(10, Color.GRAY));
-
-        VBox contentBox = new VBox(5);
-        contentBox.setAlignment(Pos.CENTER);
-        contentBox.getChildren().addAll(valueLabel);
-
-        tilePane.getChildren().add(contentBox);
-        StackPane.setAlignment(contentBox, Pos.CENTER);
-
-        tileGrid.add(tilePane, columnIndex, 0);
-    }
-
-    private void generateFeedbackTiles(String guess, boolean yearCorrect,
+    private void generateFeedbackTiles(String guess,boolean titleCorrect,
+                                       boolean yearCorrect,
                                        boolean genreCorrect, boolean originCorrect,
                                        boolean directorCorrect, boolean starCorrect) {
         Movie movie = game.getByTitle(guess, game.movies);
 
         int rowIndex = tileGrid.getRowCount();
 
-        addTileWithColor(movie.getYear() + "",
-                         yearCorrect ? Color.OLIVEDRAB : Color.GRAY, 0, rowIndex);
-        addTileWithColor( movie.getGenre(),
-                         genreCorrect ? Color.OLIVEDRAB : Color.GRAY, 1,
+        addTile(movie.getTitle(),titleCorrect ? Color.OLIVEDRAB:Color.valueOf("#BC310F"),0,
+                rowIndex);
+        addTile(movie.getYear() + "",
+                         yearCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 1,
+                rowIndex);
+        addTile( movie.getGenre(),
+                         genreCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 2,
                          rowIndex);
-        addTileWithColor( movie.getOrigin(),
-                         originCorrect ? Color.OLIVEDRAB : Color.GRAY, 2, rowIndex);
-        addTileWithColor( movie.getDirector(),
-                         directorCorrect ? Color.OLIVEDRAB : Color.GRAY, 3, rowIndex);
-        addTileWithColor( movie.getStar(),
-                         starCorrect ? Color.OLIVEDRAB : Color.GRAY, 4, rowIndex);
+        addTile( movie.getOrigin(),
+                         originCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 3,
+                 rowIndex);
+        addTile( movie.getDirector(),
+                         directorCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 4,
+                 rowIndex);
+        addTile( movie.getStar(),
+                         starCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 5,
+                 rowIndex);
     }
-
-    private void addTileWithColor(String value, Color color, int columnIndex, int rowIndex) {
+    private void addTile(String value, Color color, int columnIndex, int rowIndex) {
 
         Label valueLabel = new Label(value);
         valueLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
@@ -163,14 +206,37 @@ public class View extends Application {
 
         tileGrid.add(tilePane, columnIndex, rowIndex);
     }
+    private void handleAutoComplete() {
+        String input = guessTextField.getText();
+        if (input.isEmpty()) {
+            suggestionListView.setVisible(false);
+            return;
+        }
+        List<String> suggestions = getMatchingMovieNames(input);
+        if (suggestions.isEmpty()) {
+            suggestionListView.setVisible(false);
+        } else {
+            suggestionListView.setItems(FXCollections.observableArrayList(suggestions));
+            suggestionListView.setVisible(true);
+        }
+    }
+    private List<String> getMatchingMovieNames(String input) {
+        List<String> movieNames = game.getAllMovieTitles();
+        List<String> matchingNames = new ArrayList<>();
 
+        for (String name : movieNames) {
+            if (name.toLowerCase().startsWith(input.toLowerCase())) {
+                matchingNames.add(name);
+            }
+        }
+        return matchingNames;
+    }
     private String toRgbCode(Color color) {
         return String.format("#%02X%02X%02X",
                              (int) (color.getRed() * 255),
                              (int) (color.getGreen() * 255),
                              (int) (color.getBlue() * 255));
     }
-
     private void showWinPopup() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Congratulations");
@@ -178,7 +244,6 @@ public class View extends Application {
         alert.setContentText("You guessed the movie correctly! You win!");
         alert.showAndWait();
     }
-
     private void showLosePopup() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");

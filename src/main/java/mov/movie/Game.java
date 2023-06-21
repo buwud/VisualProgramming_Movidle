@@ -55,6 +55,16 @@ public class Game {
         return currentMovie;
     }
 
+    public List<String> getAllMovieTitles()
+    {
+        List<String> titles = new ArrayList<>();
+        for (Movie m : movies)
+        {
+            titles.add(m.getTitle());
+        }
+        return titles;
+    }
+
     public Movie getByTitle(String title, List<Movie> movies)
     {
         for (Movie movie : movies) {
@@ -64,6 +74,4 @@ public class Game {
         }
         return null; // Return null if no movie with the specified title is found
     }
-
-
 }
