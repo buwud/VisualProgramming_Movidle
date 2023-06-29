@@ -1,16 +1,29 @@
 package mov.movie;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.Buffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +35,7 @@ public class View extends Application {
     private Button exitButton;
     private GridPane tileGrid;
     private int guesses = 0;
+    private Image poster;
     private Label hint;
     private ListView<String> suggestionListView;
 
@@ -30,15 +44,16 @@ public class View extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) throws IOException
+    {
         game = new Game();
 
         g = new Label(game.getCurrentMovie().getTitle());
-        g.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
+        g.setStyle("-fx-font-size: 8px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
 
         hint = new Label("hint: " + (game.getCurrentMovie().getYear()));
         hint.setTextFill(Color.GRAY);
-
+        System.out.println(game.getCurrentMovie().getTitle());
 
         titleLabel = new Label("Guess the movie:");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;");
@@ -77,11 +92,18 @@ public class View extends Application {
         });
 
         guessButton = new Button("Guess");
-        guessButton.setStyle("-fx-font-size: 14px; -fx-pref-height: 40px; " +
-                                     "-fx-background-color: #FFD700; " +
-                                     "-fx-text-fill: #222222;");
+        guessButton.setStyle("-fx-font-size: 14px; -fx-pref-height: 40px; -fx-background-color: #FFD700; -fx-text-fill: #222222;");
         guessButton.setDefaultButton(true);
-        guessButton.setOnAction(e -> makeGuess());
+        guessButton.setOnAction(e -> {
+            try
+            {
+                makeGuess();
+            }
+            catch (IOException exception)
+            {
+                exception.printStackTrace();
+            }
+        });
 
         HBox guessBox= new HBox(guessTextField,guessButton);
         guessBox.setSpacing(10);
@@ -101,8 +123,7 @@ public class View extends Application {
         guessTextField.setOnKeyReleased(e -> handleAutoComplete());
 
         exitButton = new Button("Exit");
-        exitButton.setStyle("-fx-font-size: 12px; -fx-background-color:#DD7F77 ; " +
-                                    "-fx-text-fill: #222222;");
+        exitButton.setStyle("-fx-font-size: 14px; -fx-pref-height: 40px; -fx-background-color:#DD7F77 ; -fx-text-fill: #222222;");
         exitButton.setOnAction(e -> primaryStage.close());
 
         VBox exitButtonContainer = new VBox(exitButton);
@@ -117,12 +138,9 @@ public class View extends Application {
 
         VBox mainContainer = new VBox(20);
         mainContainer.setPadding(new Insets(20));
-        mainContainer.getChildren().addAll(exitButtonContainer,g, titleLabel,
-                                           guessBox, hint, suggestionListView,
-                                           tileGrid);
+        mainContainer.getChildren().addAll(exitButtonContainer, titleLabel, guessBox, hint, suggestionListView, tileGrid);
         mainContainer.setAlignment(Pos.CENTER);
-        mainContainer.setStyle("-fx-background-color: #222222; " +
-                                 "-fx-background-radius: 10px;");
+        mainContainer.setStyle("-fx-background-color: #222222; -fx-background-radius: 10px;");
 
         Scene scene = new Scene(mainContainer, 1000, 800);
         scene.setFill(Color.TRANSPARENT);
@@ -131,7 +149,8 @@ public class View extends Application {
         primaryStage.initStyle(StageStyle.TRANSPARENT);
         primaryStage.show();
     }
-    private void makeGuess() {
+    private void makeGuess() throws IOException
+    {
         String guess = guessTextField.getText();
         Movie movieInput = game.getByTitle(guess, game.movies);
         Movie movie = game.getCurrentMovie();
@@ -142,16 +161,14 @@ public class View extends Application {
         boolean originCorrect = movieInput.getOrigin().equalsIgnoreCase(movie.getOrigin());
         boolean directorCorrect = movieInput.getDirector().equalsIgnoreCase(movie.getDirector());
         boolean starCorrect = movieInput.getStar().equalsIgnoreCase(movie.getStar());
-
         if (titleCorrect){
-            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect,
-                                  originCorrect, directorCorrect, starCorrect);
+            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect, originCorrect, directorCorrect, starCorrect);
             showWinPopup();
+
         }
         else {
             guesses++;
-            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect,
-                                  originCorrect, directorCorrect, starCorrect);
+            generateFeedbackTiles(guess,titleCorrect, yearCorrect, genreCorrect, originCorrect, directorCorrect, starCorrect);
             if (guesses == 5)
                 showLosePopup();
         }
@@ -159,41 +176,28 @@ public class View extends Application {
         guessTextField.clear();
         guessTextField.requestFocus();
     }
-    private void generateFeedbackTiles(String guess,boolean titleCorrect,
-                                       boolean yearCorrect,
-                                       boolean genreCorrect, boolean originCorrect,
-                                       boolean directorCorrect, boolean starCorrect) {
+    private void generateFeedbackTiles(String guess,boolean titleCorrect, boolean yearCorrect, boolean genreCorrect, boolean originCorrect, boolean directorCorrect, boolean starCorrect) throws IOException
+    {
         Movie movie = game.getByTitle(guess, game.movies);
-
         int rowIndex = tileGrid.getRowCount();
 
-        addTile(movie.getTitle(),titleCorrect ? Color.OLIVEDRAB:Color.valueOf("#BC310F"),0,
-                rowIndex);
-        addTile(movie.getYear() + "",
-                         yearCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 1,
-                rowIndex);
-        addTile( movie.getGenre(),
-                         genreCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 2,
-                         rowIndex);
-        addTile( movie.getOrigin(),
-                         originCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 3,
-                 rowIndex);
-        addTile( movie.getDirector(),
-                         directorCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 4,
-                 rowIndex);
-        addTile( movie.getStar(),
-                         starCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 5,
-                 rowIndex);
+        addTile(movie.getTitle(),titleCorrect ? Color.OLIVEDRAB:Color.valueOf("#BC310F"),0, rowIndex);
+        addTile(movie.getYear() + "", yearCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 1, rowIndex);
+        addTile( movie.getGenre(), genreCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 2, rowIndex);
+        addTile( movie.getOrigin(), originCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 3, rowIndex);
+        addTile( movie.getDirector(), directorCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 4, rowIndex);
+        addTile( movie.getStar(), starCorrect ? Color.OLIVEDRAB : Color.valueOf("#BC310F"), 5, rowIndex);
     }
-    private void addTile(String value, Color color, int columnIndex, int rowIndex) {
+    private void addTile(String value, Color color, int columnIndex, int rowIndex) throws IOException
+    {
+        String guess = guessTextField.getText();
+        Movie movieInput = game.getByTitle(guess, game.movies);
 
         Label valueLabel = new Label(value);
         valueLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         StackPane tilePane = new StackPane();
-        tilePane.setStyle("-fx-background-color: " + toRgbCode(color) + "; " +
-                                  "-fx-border-color: #cccccc; " +
-                                  "-fx-border-width: 1px; -fx-padding: 10px");
+        tilePane.setStyle("-fx-background-color: " + toRgbCode(color) + "; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-padding: 10px");
         tilePane.setEffect(new DropShadow(10, Color.GRAY));
 
         VBox contentBox = new VBox(5);
@@ -205,49 +209,66 @@ public class View extends Application {
 
         tileGrid.add(tilePane, columnIndex, rowIndex);
     }
-    private void handleAutoComplete() {
+
+    private void handleAutoComplete()
+    {
         String input = guessTextField.getText();
         if (input.isEmpty()) {
             suggestionListView.setVisible(false);
             return;
         }
         List<String> suggestions = getMatchingMovieNames(input);
-        if (suggestions.isEmpty()) {
+        if (suggestions.isEmpty())
             suggestionListView.setVisible(false);
-        } else {
+        else
+        {
             suggestionListView.setItems(FXCollections.observableArrayList(suggestions));
             suggestionListView.setVisible(true);
         }
     }
-    private List<String> getMatchingMovieNames(String input) {
+    private List<String> getMatchingMovieNames(String input)
+    {
         List<String> movieNames = game.getAllMovieTitles();
         List<String> matchingNames = new ArrayList<>();
 
-        for (String name : movieNames) {
-            if (name.toLowerCase().startsWith(input.toLowerCase())) {
+        for (String name : movieNames)
+        {
+            if (name.toLowerCase().startsWith(input.toLowerCase()))
                 matchingNames.add(name);
-            }
         }
         return matchingNames;
     }
-    private String toRgbCode(Color color) {
+
+
+    private String toRgbCode(Color color)
+    {
         return String.format("#%02X%02X%02X",
                              (int) (color.getRed() * 255),
                              (int) (color.getGreen() * 255),
                              (int) (color.getBlue() * 255));
     }
-    private void showWinPopup() {
+    private void showWinPopup()
+    {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Congratulations");
         alert.setHeaderText(null);
         alert.setContentText("You guessed the movie correctly! You win!");
         alert.showAndWait();
+
+        PauseTransition delay = new PauseTransition(Duration.seconds(10));
+        delay.setOnFinished(e -> Platform.exit());
+        delay.play();
     }
-    private void showLosePopup() {
+    private void showLosePopup()
+    {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
         alert.setHeaderText(null);
         alert.setContentText("You have reached the maximum number of guesses. Game over!");
         alert.showAndWait();
+
+        PauseTransition delay = new PauseTransition(Duration.seconds(10));
+        delay.setOnFinished(e -> Platform.exit());
+        delay.play();
     }
 }

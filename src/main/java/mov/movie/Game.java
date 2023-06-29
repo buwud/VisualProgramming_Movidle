@@ -1,15 +1,18 @@
 package mov.movie;
 
 import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class Game {
+public class Game
+{
     final public List<Movie> movies;
     private Movie currentMovie;
-
-    public List<Boolean> guessings;
 
     public Game() throws IOException
     {
@@ -19,13 +22,15 @@ public class Game {
 
     public static List<Movie> getFromCSV() throws IOException
     {
-        List<Movie> movies_= new ArrayList<>();
+        List<Movie> movies_ = new ArrayList<>();
 
         try (BufferedReader br =
-                     new BufferedReader(new InputStreamReader(new FileInputStream("src/imdb_top_250.csv"), "ISO-8859-9"))) {
+                     new BufferedReader(new InputStreamReader(new FileInputStream("src/imdb_top_250.csv"), "ISO-8859-9")))
+        {
             String line;
             br.readLine();
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null)
+            {
                 String[] items = line.split(";");
                 int id = Integer.parseInt(items[0]);
                 String title = items[1];
@@ -39,20 +44,23 @@ public class Game {
                 Movie movie = new Movie(id, year, title, genre, origin, director, star, url);
                 movies_.add(movie);
             }
-        } catch (IOException exception) {
+        } catch (IOException exception)
+        {
             exception.printStackTrace();
         }
 
         return movies_;
     }
 
-    private void chooseRandomMovie() {
+    private void chooseRandomMovie()
+    {
         Random random = new Random();
         int index = random.nextInt(movies.size());
         currentMovie = movies.get(index);
     }
 
-    public Movie getCurrentMovie() {
+    public Movie getCurrentMovie()
+    {
         return currentMovie;
     }
 
@@ -68,11 +76,13 @@ public class Game {
 
     public Movie getByTitle(String title, List<Movie> movies)
     {
-        for (Movie movie : movies) {
-            if (movie.getTitle().equalsIgnoreCase(title)) {
+        for (Movie movie : movies)
+        {
+            if (movie.getTitle().equalsIgnoreCase(title))
+            {
                 return movie;
             }
         }
-        return null; // Return null if no movie with the specified title is found
+        return null;
     }
 }

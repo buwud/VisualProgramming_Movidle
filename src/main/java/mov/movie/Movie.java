@@ -29,4 +29,5 @@ public class Movie
     public String getOrigin(){return origin;}
     public String getDirector(){return director;}
     public String getStar(){return star;}
+    public String getUrl(){return url;}
 }
